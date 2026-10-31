@@ -1,9 +1,11 @@
 
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   Activity,
   ArrowUpRight,
   Database,
+  Flag,
   LogOut,
   ShieldCheck,
 } from "lucide-react";
@@ -14,13 +16,12 @@ import { logout } from "../actions";
 export default async function PlatformPage() {
   const supabase = await createClient();
 
-  // Ověření aktuálně přihlášeného uživatele
+  // Ověření přihlášeného uživatele
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser();
 
-  // Nepřihlášený uživatel se vrátí na login
   if (error || !user) {
     redirect("/");
   }
@@ -37,17 +38,22 @@ export default async function PlatformPage() {
       {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-top">
-          <div className="brand">
+          <Link href="/platform" className="brand">
             SPRINTUY<span className="brand-dot">.</span>
-          </div>
+          </Link>
 
           <p className="sidebar-caption">WORKSPACE</p>
 
           <nav className="sidebar-nav">
-            <div className="nav-item active">
+            <Link href="/platform" className="nav-item active">
               <Activity size={17} />
-              <span>Overview</span>
-            </div>
+              <span>Přehled</span>
+            </Link>
+
+            <Link href="/platform/zavody" className="nav-item">
+              <Flag size={17} />
+              <span>Závody</span>
+            </Link>
           </nav>
         </div>
 
@@ -66,7 +72,7 @@ export default async function PlatformPage() {
           <form action={logout}>
             <button type="submit" className="logout-button">
               <LogOut size={16} />
-              Sign out
+              Odhlásit se
             </button>
           </form>
         </div>
@@ -75,24 +81,24 @@ export default async function PlatformPage() {
       {/* MAIN CONTENT */}
       <section className="platform-main">
         <header className="platform-header">
-          <span>Workspace / Overview</span>
+          <span>Platforma / Přehled</span>
 
           <span className="admin-label">
             <ShieldCheck size={15} />
-            Admin access
+            Administrátor
           </span>
         </header>
 
         <div className="dashboard-content">
           {/* WELCOME */}
           <div className="dashboard-heading">
-            <span className="eyebrow">YOUR WORKSPACE</span>
+            <span className="eyebrow">SPRINTUY PLATFORM</span>
 
-            <h1>Welcome to Sprintuy.</h1>
+            <h1>Vítej ve Sprintuy.</h1>
 
             <p>
-              Everything starts here. Your platform is ready
-              for the next step.
+              Administrace závodů a správa dat propojených
+              s mobilní aplikací.
             </p>
           </div>
 
@@ -111,14 +117,14 @@ export default async function PlatformPage() {
                 <h2>Supabase Auth</h2>
 
                 <p>
-                  Authentication service is connected and your
-                  identity has been verified.
+                  Připojení k autentizační službě je aktivní.
+                  Tvoje identita byla úspěšně ověřena.
                 </p>
               </div>
 
               <div className="status-row">
                 <span className="status-dot" />
-                <span>Connected</span>
+                <span>Připojeno</span>
               </div>
             </div>
 
@@ -130,31 +136,40 @@ export default async function PlatformPage() {
               </div>
 
               <div>
-                <h2>Access control</h2>
+                <h2>Zabezpečení platformy</h2>
 
                 <p>
-                  This workspace is restricted to your
-                  authorized administrator account.
+                  Administrace je dostupná pouze
+                  autorizovanému administrátorskému účtu.
                 </p>
               </div>
 
               <div className="status-row">
                 <span className="status-dot" />
-                <span>Protected</span>
+                <span>Chráněno</span>
               </div>
             </div>
           </div>
 
-          {/* NEXT STEPS */}
+          {/* RACE MANAGEMENT */}
           <div className="next-section">
-            <span className="eyebrow">COMING NEXT</span>
+            <span className="eyebrow">SPRÁVA ZÁVODŮ</span>
 
-            <h2>Ready to build something great.</h2>
+            <h2>Všechny závody na jednom místě.</h2>
 
             <p>
-              Race management, events, users, registrations
-              and analytics will live here.
+              Procházej závody podle měsíců, upravuj jejich
+              informace, trasy, ceny a registrační odkazy.
             </p>
+
+            <Link
+              href="/platform/zavody"
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#333]"
+            >
+              <Flag size={16} />
+              Otevřít závody
+              <ArrowUpRight size={16} />
+            </Link>
           </div>
         </div>
       </section>
