@@ -20,26 +20,11 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="login-page">
-      <header className="login-header">
-        <div className="brand">
-          SPRINTUY<span className="brand-dot">.</span>
-        </div>
-
-        <span className="header-tag">ADMIN PORTAL</span>
-      </header>
-
-      <div className="login-center">
-        <div className="login-content">
-          <LoginForm />
-          <SprintuyRun />
-        </div>
+    <main className="minimal-landing">
+      <div className="minimal-landing-content">
+        <LoginForm />
+        <SprintuyRun />
       </div>
-
-      <footer className="site-footer">
-        <span>© {new Date().getFullYear()} Sprintuy</span>
-        <span>Built for what&apos;s next.</span>
-      </footer>
     </main>
   );
 }

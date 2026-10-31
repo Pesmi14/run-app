@@ -855,3 +855,272 @@ button:disabled {
     height: 42px;
   }
 }
+
+
+
+/* =========================================
+   SPRINTUY — ONE SCREEN LANDING
+========================================= */
+
+.minimal-landing {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  background: #fafafa;
+}
+
+.minimal-landing-content {
+  width: 100%;
+  max-width: 580px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(15px, 3vh, 30px);
+  min-height: 0;
+}
+
+/* LOGIN */
+
+.minimal-login {
+  width: min(100%, 340px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.minimal-login > input,
+.minimal-password input {
+  width: 100%;
+  height: 44px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 9px;
+  padding: 0 15px;
+  outline: none;
+  font-size: 13px;
+  color: #171717;
+  transition: border-color 0.2s;
+}
+
+.minimal-login input::placeholder {
+  color: #aaa;
+}
+
+.minimal-login input:focus {
+  border-color: #888;
+}
+
+.minimal-password {
+  position: relative;
+  width: 100%;
+}
+
+.minimal-password input {
+  padding-right: 55px;
+}
+
+.minimal-password button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  height: 34px;
+  width: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #171717;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+}
+
+.minimal-password button:hover {
+  background: #333;
+}
+
+.minimal-password button:disabled {
+  opacity: 0.5;
+}
+
+.minimal-login-error {
+  color: #dc2626;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* GAME */
+
+.minimal-landing .sprintuy-game {
+  width: 100%;
+  max-width: 580px;
+  padding: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.minimal-landing .game-heading {
+  display: none;
+}
+
+.minimal-landing .game-canvas-wrap {
+  flex-shrink: 1;
+  min-height: 0;
+  border-radius: 11px;
+  background: #fafafa;
+}
+
+.minimal-landing .game-canvas {
+  max-height: min(24dvh, 174px);
+  object-fit: fill;
+}
+
+.minimal-landing .game-controls {
+  margin-top: 8px;
+  flex-shrink: 0;
+}
+
+.minimal-landing .game-controls > span {
+  font-size: 9px;
+}
+
+.minimal-landing .game-controls button {
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+/* SAVE SCORE */
+
+.minimal-landing .game-save {
+  margin-top: 10px;
+  padding: 10px 12px;
+  flex-shrink: 0;
+}
+
+.minimal-landing .game-save > div:first-child {
+  display: none;
+}
+
+.minimal-landing .game-save-inputs {
+  margin-top: 0;
+}
+
+.minimal-landing .game-save-inputs input,
+.minimal-landing .game-save-inputs button {
+  height: 35px;
+}
+
+.minimal-landing .game-saved-message {
+  margin-top: 7px;
+}
+
+/* LEADERBOARD */
+
+.minimal-landing .game-leaderboard {
+  width: 100%;
+  margin-top: 12px;
+  flex-shrink: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.minimal-landing .leaderboard-title {
+  padding: 10px 15px;
+}
+
+.minimal-landing .leaderboard-title h3 {
+  font-size: 12px;
+}
+
+.minimal-landing .leaderboard-row {
+  padding: 8px 15px;
+  font-size: 11px;
+}
+
+.minimal-landing .leaderboard-empty {
+  padding: 18px 12px;
+}
+
+.minimal-landing .leaderboard-disclaimer {
+  display: none;
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .minimal-landing {
+    padding: 12px 14px;
+  }
+
+  .minimal-landing-content {
+    gap: 22px;
+  }
+
+  .minimal-landing .game-canvas {
+    max-height: 145px;
+  }
+
+  .minimal-landing .game-controls {
+    margin-top: 7px;
+  }
+
+  .minimal-landing .game-save-inputs {
+    flex-direction: row;
+  }
+}
+
+/* SMALL SCREENS */
+
+@media (max-height: 700px) {
+  .minimal-landing-content {
+    gap: 12px;
+  }
+
+  .minimal-login > input,
+  .minimal-password input {
+    height: 39px;
+  }
+
+  .minimal-password button {
+    height: 29px;
+  }
+
+  .minimal-landing .game-canvas {
+    max-height: 110px;
+  }
+
+  .minimal-landing .leaderboard-row {
+    padding: 5px 12px;
+  }
+
+  .minimal-landing .leaderboard-title {
+    padding: 7px 12px;
+  }
+
+  .minimal-landing .game-leaderboard {
+    margin-top: 7px;
+  }
+}
+
+@media (max-height: 480px) {
+  .minimal-landing .leaderboard-disclaimer,
+  .minimal-landing .game-leaderboard {
+    display: none;
+  }
+
+  .minimal-landing .game-canvas {
+    max-height: 100px;
+  }
+}
