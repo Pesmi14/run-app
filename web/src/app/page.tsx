@@ -1,6 +1,8 @@
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LoginForm from "@/components/LoginForm";
+import SprintuyRun from "@/components/SprintuyRun";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -28,7 +30,10 @@ export default async function HomePage() {
       </header>
 
       <div className="login-center">
-        <LoginForm />
+        <div className="login-content">
+          <LoginForm />
+          <SprintuyRun />
+        </div>
       </div>
 
       <footer className="site-footer">
