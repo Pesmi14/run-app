@@ -1,4 +1,3 @@
-
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -7,6 +6,7 @@ import {
   Database,
   Flag,
   LogOut,
+  PlusCircle,
   ShieldCheck,
 } from "lucide-react";
 
@@ -53,6 +53,11 @@ export default async function PlatformPage() {
             <Link href="/platform/zavody" className="nav-item">
               <Flag size={17} />
               <span>Závody</span>
+            </Link>
+
+            <Link href="/platform/pridat-zavody" className="nav-item">
+              <PlusCircle size={17} />
+              <span>Přidat závody</span>
             </Link>
           </nav>
         </div>

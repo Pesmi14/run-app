@@ -13,6 +13,7 @@ type ScoreEntry = {
 };
 
 type Obstacle = {
+  kind: "car" | "tree" | "rock";
   x: number;
   width: number;
   height: number;
@@ -37,8 +38,8 @@ function newGame(): Game {
     lift: 0,
     velocity: 0,
     score: 0,
-    speed: 5,
-    spawnTimer: 85,
+    speed: 4.8,
+    spawnTimer: 95,
     obstacles: [],
   };
 }
@@ -132,29 +133,79 @@ function drawGame(
     ctx.stroke();
   }
 
-  // Překážky
+  // Překážky. Každá má vlastní vzhled a stojí správně na zemi.
   for (const obstacle of game.obstacles) {
-    const y = GROUND - obstacle.height;
+    const { x, width, height, kind } = obstacle;
+    const y = GROUND - height;
+    ctx.save();
 
-    ctx.fillStyle = "#f97316";
-    ctx.beginPath();
-    ctx.roundRect(
-      obstacle.x,
-      y,
-      obstacle.width,
-      obstacle.height,
-      4
-    );
-    ctx.fill();
-
-    // Světlý proužek
-    ctx.fillStyle = "#ffedd5";
-    ctx.fillRect(
-      obstacle.x + 4,
-      y + 8,
-      Math.max(2, obstacle.width - 8),
-      4
-    );
+    if (kind === "car") {
+      // Podvozek je nad koly, ne pod nimi.
+      const wheelRadius = 5;
+      const wheelY = GROUND - wheelRadius;
+      const bodyBottom = GROUND - wheelRadius * 1.45;
+      ctx.fillStyle = "#f97316";
+      ctx.beginPath();
+      ctx.roundRect(x, bodyBottom - 13, width, 12, 3);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x + 9, bodyBottom - 13);
+      ctx.lineTo(x + 14, bodyBottom - 23);
+      ctx.lineTo(x + width - 12, bodyBottom - 23);
+      ctx.lineTo(x + width - 6, bodyBottom - 13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#dbeafe";
+      ctx.fillRect(x + 15, bodyBottom - 20, Math.max(6, width - 29), 6);
+      for (const wheelX of [x + 9, x + width - 9]) {
+        ctx.fillStyle = "#1f2937";
+        ctx.beginPath();
+        ctx.arc(wheelX, wheelY, wheelRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#9ca3af";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(wheelX, wheelY, 2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (kind === "rock") {
+      ctx.fillStyle = "#94a3b8";
+      ctx.beginPath();
+      ctx.moveTo(x, GROUND);
+      ctx.lineTo(x + 3, y + 7);
+      ctx.lineTo(x + width * 0.42, y);
+      ctx.lineTo(x + width - 4, y + 4);
+      ctx.lineTo(x + width, GROUND);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "#64748b";
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.beginPath();
+      ctx.moveTo(x + 7, y + 10);
+      ctx.lineTo(x + width * 0.45, y + 5);
+      ctx.stroke();
+    } else {
+      // Malý strom: kmen a koruna se dotýkají země správnou orientací.
+      ctx.fillStyle = "#8b5e3c";
+      ctx.fillRect(x + width / 2 - 3, GROUND - 17, 6, 17);
+      ctx.fillStyle = "#16a34a";
+      ctx.beginPath();
+      ctx.moveTo(x + width / 2, y);
+      ctx.lineTo(x + width, GROUND - 13);
+      ctx.lineTo(x, GROUND - 13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath();
+      ctx.moveTo(x + width / 2, y + 8);
+      ctx.lineTo(x + width - 5, GROUND - 8);
+      ctx.lineTo(x + 5, GROUND - 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   drawRunner(ctx, game.lift);
@@ -340,22 +391,27 @@ export default function SprintuyRun() {
         }
 
         game.score += 0.19 * dt;
-        game.speed = Math.min(11, 5 + game.score / 140);
+        // Pozvolný nárůst rychlosti: +0,45 přibližně každých 100 bodů.
+        game.speed = Math.min(8.2, 4.8 + game.score * 0.0045);
 
-        // Generování překážek
         game.spawnTimer -= dt;
-
         if (game.spawnTimer <= 0) {
-          const height = 24 + Math.random() * 14;
+          const roll = Math.random();
+          const kind: Obstacle["kind"] =
+            roll < 0.34 ? "car" : roll < 0.68 ? "tree" : "rock";
+          const dimensions =
+            kind === "car"
+              ? { width: 39, height: 31 }
+              : kind === "tree"
+                ? { width: 27, height: 38 }
+                : { width: 22 + Math.random() * 9, height: 16 + Math.random() * 7 };
 
-          game.obstacles.push({
-            x: WIDTH + 20,
-            width: 17 + Math.random() * 10,
-            height,
-          });
+          game.obstacles.push({ x: WIDTH + 20, kind, ...dimensions });
 
-          game.spawnTimer =
-            72 + Math.random() * 45 - Math.min(game.speed * 2, 15);
+          // Rozestup odměřujeme ve vzdálenosti, nikoliv jen ve snímcích.
+          // Při vyšší rychlosti tak zůstává dost času k dalšímu skoku.
+          const minDistance = 305;
+          game.spawnTimer = (minDistance + Math.random() * 115) / game.speed;
         }
 
         for (const obstacle of game.obstacles) {
@@ -523,7 +579,7 @@ export default function SprintuyRun() {
           </div>
         ) : (
           <div className="leaderboard-rows">
-            {leaderboard.map((entry, index) => (
+            {leaderboard.slice(0, 5).map((entry, index) => (
               <div
                 className="leaderboard-row"
                 key={`${entry.date}-${index}`}
