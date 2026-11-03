@@ -21,26 +21,18 @@ import { logout } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function PlatformPage() {
+  const started = performance.now();
   const supabase = await createClient();
 
-  // Ověření přihlášeného uživatele
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    redirect("/login");
-  }
-
-  // Přístup pouze pro administrátora
-  const adminId = process.env.ADMIN_USER_ID;
-
-  if (!adminId || user.id !== adminId) {
+  // Zachováme ověřené getUser() pro kompatibilitu se stávající verzí Supabase.
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) redirect("/login");
+  if (!process.env.ADMIN_USER_ID || user.id !== process.env.ADMIN_USER_ID) {
     redirect("/unauthorized");
   }
+  const authMs = Math.round(performance.now() - started);
+  const email = user.email || "";
 
-  // Český kalendářní den (date sloupce v Supabase jsou bez časové zóny).
   const todayPrague = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Prague",
     year: "numeric",
@@ -48,9 +40,6 @@ export default async function PlatformPage() {
     day: "2-digit",
   }).format(new Date());
 
-  // Záměrně oddělujeme "všechny publikované" od "nabízené nadcházející".
-  // Parent event zastupuje své podzávody, abychom jednu akci nepočítali vícekrát.
-  // Pokud má mobil jiný filtr, je potřeba shodu ověřit SQL dotazem níže.
   const statsStarted = performance.now();
   const [usersResult, participationsResult, feedbackResult, racesResult] = await Promise.all([
     supabase.from("user_profiles").select("user_id", { count: "exact", head: true }),
@@ -63,12 +52,8 @@ export default async function PlatformPage() {
       .is("parent_event_id", null)
       .or(`start_date.gte.${todayPrague},end_date.gte.${todayPrague}`),
   ]);
-
-  console.log(
-  `[SPRINTUY PERFORMANCE] Dashboard queries: ${Math.round(
-    performance.now() - statsStarted
-  )} ms`
-);
+  const statsMs = Math.round(performance.now() - statsStarted);
+  console.log(`[SPRINTUY PERFORMANCE] Prehled: auth=${authMs}ms stats=${statsMs}ms total=${Math.round(performance.now()-started)}ms`);
 
   const statistics = [
     { label: "Uživatelé", value: usersResult.error ? null : usersResult.count, detail: "Profily registrovaných uživatelů", icon: Users },
@@ -79,83 +64,43 @@ export default async function PlatformPage() {
 
   return (
     <main className="platform-page">
-      {/* SIDEBAR */}
       <aside className="sidebar">
         <div className="sidebar-top">
           <Link href="/platform" className="brand">
             SPRINTUY<span className="brand-dot">.</span>
           </Link>
-
           <p className="sidebar-caption">WORKSPACE</p>
-
           <nav className="sidebar-nav">
-            <Link href="/platform" className="nav-item active">
-              <Activity size={17} />
-              <span>Přehled</span>
-            </Link>
-
-            <Link href="/platform/zavody" className="nav-item">
-              <Flag size={17} />
-              <span>Závody</span>
-            </Link>
-
-            <Link href="/platform/pridat-zavody" className="nav-item">
-              <PlusCircle size={17} />
-              <span>Přidat závody</span>
-            </Link>
-            <Link href="/platform/novinky" className="nav-item"><Newspaper size={17}/><span>Novinky</span></Link>
-            <Link href="/platform/komunita" className="nav-item"><UsersRound size={17}/><span>Komunita</span></Link>
-            <Link href="/platform/feedback" className="nav-item"><MessageSquare size={17}/><span>Zpětná vazba</span></Link>
-            <Link href="/platform/waitlist" className="nav-item"><ListChecks size={17}/><span>Waitlist</span></Link>
+            <Link href="/platform" className="nav-item active"><Activity size={17} /><span>Přehled</span></Link>
+            <Link href="/platform/zavody" className="nav-item"><Flag size={17} /><span>Závody</span></Link>
+            <Link href="/platform/pridat-zavody" className="nav-item"><PlusCircle size={17} /><span>Přidat závody</span></Link>
+            <Link href="/platform/novinky" className="nav-item"><Newspaper size={17} /><span>Novinky</span></Link>
+            <Link href="/platform/komunita" className="nav-item"><UsersRound size={17} /><span>Komunita</span></Link>
+            <Link href="/platform/feedback" className="nav-item"><MessageSquare size={17} /><span>Zpětná vazba</span></Link>
+            <Link href="/platform/waitlist" className="nav-item"><ListChecks size={17} /><span>Waitlist</span></Link>
           </nav>
         </div>
-
         <div className="sidebar-bottom">
           <div className="sidebar-user">
-            <div className="user-avatar">
-              {(user.email || "A").slice(0, 1).toUpperCase()}
-            </div>
-
-            <div className="user-meta">
-              <strong>Administrator</strong>
-              <span>{user.email}</span>
-            </div>
+            <div className="user-avatar">{(email || "A").slice(0, 1).toUpperCase()}</div>
+            <div className="user-meta"><strong>Administrator</strong><span>{email}</span></div>
           </div>
-
           <form action={logout}>
-            <button type="submit" className="logout-button">
-              <LogOut size={16} />
-              Odhlásit se
-            </button>
+            <button type="submit" className="logout-button"><LogOut size={16} />Odhlásit se</button>
           </form>
         </div>
       </aside>
-
-      {/* MAIN CONTENT */}
       <section className="platform-main">
         <header className="platform-header">
           <span>Platforma / Přehled</span>
-
-          <span className="admin-label">
-            <ShieldCheck size={15} />
-            Administrátor
-          </span>
+          <span className="admin-label"><ShieldCheck size={15} />Administrátor</span>
         </header>
-
         <div className="dashboard-content">
-          {/* WELCOME */}
           <div className="dashboard-heading">
             <span className="eyebrow">SPRINTUY PLATFORM</span>
-
             <h1>Vítej ve Sprintuy.</h1>
-
-            <p>
-              Administrace závodů a správa dat propojených
-              s mobilní aplikací.
-            </p>
+            <p>Administrace závodů a správa dat propojených s mobilní aplikací.</p>
           </div>
-
-          {/* Čtyři živé statistiky z databáze */}
           <div className="dashboard-grid" style={{ marginTop: 32 }}>
             {statistics.map(({ label, value, detail, icon: Icon }) => (
               <div className="dashboard-card" key={label} style={{ minHeight: 156, gap: 16 }}>
@@ -172,7 +117,6 @@ export default async function PlatformPage() {
               </div>
             ))}
           </div>
-
         </div>
       </section>
     </main>
