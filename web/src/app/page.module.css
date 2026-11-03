@@ -56,3 +56,15 @@
     width: min(76%, 280px);
   }
 }
+
+/* Mobilní zobrazení bez scrollování */
+@media (max-width: 680px) {
+  .landing {
+    height: 100svh;
+    min-height: 100svh;
+    max-height: 100svh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    box-sizing: border-box;
+  }
+}

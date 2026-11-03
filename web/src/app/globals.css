@@ -1888,3 +1888,28 @@ button:disabled {
 .platform-page textarea {
   font: inherit;
 }
+
+@media (max-width: 680px) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Sprintuy – tmavé pozadí i při přetažení stránky */
+
+html {
+  background-color: #020817;
+}
+
+body {
+  background-color: #020817;
+  margin: 0;
+}
+
+@media (max-width: 680px) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
