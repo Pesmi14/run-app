@@ -68,3 +68,20 @@
     box-sizing: border-box;
   }
 }
+
+/* Mobilní landing page přes celou obrazovku */
+
+@media (max-width: 680px) {
+  .landing {
+    min-height: 100svh;
+    height: 100svh;
+    box-sizing: border-box;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
+/* Tmavé pozadí pouze na hlavní stránce */
+.landing {
+  background-color: #020817;
+}
