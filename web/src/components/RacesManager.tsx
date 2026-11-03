@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronDown, ChevronRight, ExternalLink, Plus, Search, Trash2, Save, Flag, Pencil, Check, X } from "lucide-react";
-import { saveRoute, saveTier, deleteRoute, deleteTier, deleteSelectedTiers, setRaceStatus, updateRaceDetails, deleteRace, renameTierRoute, setRaceReviewed, type ActionResult } from "@/app/platform/zavody/actions";
+import { ArrowLeft, ChevronDown, ChevronRight, ExternalLink, Plus, Search, Trash2, Save, Flag, Pencil } from "lucide-react";
+import { saveRoute, saveTier, deleteRoute, deleteTier, deleteSelectedTiers, setRaceStatus, updateRaceDetails, deleteRace, type ActionResult } from "@/app/platform/zavody/actions";
 import styles from "./RacesManager.module.css";
 
 type Row = Record<string, unknown>;
@@ -45,24 +45,6 @@ function PriceLine({ race, tier, routeId, routes, onSuccess, onCancel, checked, 
   checked?: boolean; onCheckedChange?: (value: boolean) => void; bulkPending?: boolean;
 }) {
   const { pending, feedback, perform } = useSave(onSuccess);
-  const currentRoute = routes.find(r => val(r.id) === routeId);
-  const originalRouteLabel = currentRoute ? val(currentRoute.label) : "Obecné startovné";
-  const [routeLabel, setRouteLabel] = useState(originalRouteLabel);
-  const { pending: routePending, feedback: routeFeedback, perform: performRoute } = useSave(onSuccess);
-  useEffect(() => { if (!routePending) setRouteLabel(originalRouteLabel); }, [originalRouteLabel, routePending]);
-  function saveRouteLabel() {
-    if (!tier || routePending) return;
-    const next = routeLabel.trim();
-    if (!next || next === originalRouteLabel) {
-      setRouteLabel(originalRouteLabel);
-      return;
-    }
-    performRoute(async () => {
-      const result = await renameTierRoute(val(race.id), val(tier.id), next);
-      if (!result.ok) setRouteLabel(originalRouteLabel);
-      return result;
-    });
-  }
   const registration = val(tier?.registration_url) ||
     val(routes.find(r => val(r.id) === routeId)?.registration_url) || val(race.registration_url);
   return <div className={`${styles.priceLineWrap} ${checked ? styles.selectedPriceLine : ""}`}>
@@ -81,18 +63,11 @@ function PriceLine({ race, tier, routeId, routes, onSuccess, onCancel, checked, 
       <input type="hidden" name="valid_from" value={pragueDate(tier?.valid_from)} />
       <input type="hidden" name="audience_label" value={val(tier?.audience_label)} />
       <label className={styles.simpleField}>
-        <span>Trasa {tier && routePending ? "· Ukládám…" : ""}</span>
-        {tier ? <>
-          <input type="hidden" name="route_id" value={routeId} />
-          <input type="text" aria-label="Přepsat název trasy" value={routeLabel}
-            required disabled={pending || routePending}
-            title={routeId ? "Změna názvu platí pro všechny cenové vlny této trasy. Ukládá se po opuštění pole." : "Přepsáním obecného startovného vytvoříš novou trasu k této ceně."}
-            onChange={e => setRouteLabel(e.target.value)} onBlur={saveRouteLabel}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }} />
-        </> : <select name="route_id" defaultValue={routeId}>
+        <span>Trasa</span>
+        <select name="route_id" defaultValue={routeId}>
           <option value="">Obecné startovné</option>
           {routes.map(r => <option key={val(r.id)} value={val(r.id)}>{shown(r.label)}</option>)}
-        </select>}
+        </select>
       </label>
       <label className={styles.simpleField}><span>Cena (Kč)</span>
         <input name="price" type="number" min="0" step="any" required defaultValue={val(tier?.price)} placeholder="790" />
@@ -112,7 +87,6 @@ function PriceLine({ race, tier, routeId, routes, onSuccess, onCancel, checked, 
       </div>
     </form>
     <Feedback value={feedback}/>
-    <Feedback value={routeFeedback}/>
   </div>;
 }
 function Editor({ race, distances, prices }: { race: Row; distances: Row[]; prices: Row[] }) {
@@ -201,8 +175,8 @@ function StatusSelect({race}:{race:Row}) {
     const next=e.target.value; const old=status;setStatus(next);perform(async()=>{const r=await setRaceStatus(val(race.id),next);if(!r.ok)setStatus(old);return r;});
   }}>{!["published","archived"].includes(status)&&<option value={status}>{status}</option>}<option value="published">Published</option><option value="archived">Archived</option></select><Feedback value={feedback}/></div>;
 }
-function RaceRow({ race, distances, prices, expanded, onToggle, reviewed, onReviewed }: {
-  race: Row; distances: Row[]; prices: Row[]; expanded: boolean; onToggle: () => void; reviewed: boolean; onReviewed: (raceId: string, checked: boolean) => void;
+function RaceRow({ race, distances, prices, expanded, onToggle }: {
+  race: Row; distances: Row[]; prices: Row[]; expanded: boolean; onToggle: () => void;
 }) {
   const { pending, feedback, perform } = useSave(() => {});
   const id = val(race.id);
@@ -228,18 +202,8 @@ function RaceRow({ race, distances, prices, expanded, onToggle, reviewed, onRevi
         <span className={styles.raceTitle}>
           <span style={{display:"flex",alignItems:"center",gap:5,minWidth:0}}>
             <button type="button" onClick={onToggle} style={{fontWeight:750,fontSize:13,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"left",background:"none",border:0,padding:0,cursor:"pointer",color:"inherit"}}>{shown(race.name)}</button>
-            <button type="button" disabled={pending} onClick={() => perform(async () => {
-              const next = !reviewed;
-              const r = await setRaceReviewed(id, next);
-              if (r.ok) onReviewed(id, next);
-              return r;
-            })} title={reviewed ? "Zkontrolováno – označit jako nezkontrolované" : "Nezkontrolováno – označit jako zkontrolované"}
-              aria-label={reviewed ? `Označit závod ${val(race.name)} jako nezkontrolovaný` : `Označit závod ${val(race.name)} jako zkontrolovaný`}
-              aria-pressed={reviewed}
-              style={{...iconButton,flexShrink:0,border:"1px solid",borderColor:reviewed?"#9fdbb6":"#e6adb0",borderRadius:6,color:reviewed?"#168448":"#c44b53",background:reviewed?"#e9f8ee":"#fff3f3"}}>
-              {reviewed ? <Check size={14} strokeWidth={3}/> : <X size={14} strokeWidth={3}/>}
-            </button>
             <button type="button" style={iconButton} onClick={editName} disabled={pending} aria-label={`Upravit název ${val(race.name)}`} title="Upravit název"><Pencil size={13}/></button>
+            <Link href={`/platform/zavody/${id}`} style={{fontSize:11,color:"#2563eb",whiteSpace:"nowrap",textDecoration:"underline"}} title="Kompletní editor závodu">Detail / upravit</Link>
           </span>
           <small>{[race.city,race.region].map(val).filter(Boolean).join(" · ")}</small>
         </span>
@@ -261,40 +225,31 @@ function RaceRow({ race, distances, prices, expanded, onToggle, reviewed, onRevi
   </div>;
 }
 export default function RacesManager({races,distances,prices,initiallyOpen,saved}:{races:Row[];distances:Row[];prices:Row[];initiallyOpen:string;saved:boolean}) {
-  const [query,setQuery]=useState("");const [sport,setSport]=useState("");const [status,setStatus]=useState("published");const [month,setMonth]=useState("");const [open,setOpen]=useState(initiallyOpen);
-  const [reviewOverrides, setReviewOverrides] = useState<Record<string, boolean>>({});
-  const isReviewed = (r: Row) => reviewOverrides[val(r.id)] ?? r.admin_checked === true;
-  // Souhrn kontrol počítá VŽDY pouze publikované závody, nezávisle na filtrech.
-  const publishedRaces = races.filter(r => val(r.status) === "published");
-  const reviewedTotal = publishedRaces.filter(isReviewed).length;
-  const uncheckedTotal = publishedRaces.length - reviewedTotal;
+  const [query,setQuery]=useState("");const [sport,setSport]=useState("");const [organizer,setOrganizer]=useState("");const [status,setStatus]=useState("");const [month,setMonth]=useState("");const [open,setOpen]=useState(initiallyOpen);
   const sports=useMemo(()=>[...new Set(races.map(r=>val(r.sport)).filter(Boolean))].sort(),[races]);
+  const organizers=useMemo(()=>[...new Set(races.map(r=>val(r.organizer_name)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"cs")),[races]);
   const months=useMemo(()=>[...new Set(races.map(r=>monthKey(r.start_date)))].sort(),[races]);
   const byRace = (rows: Row[]) => { const m=new Map<string,Row[]>();for(const r of rows){const id=val(r.race_id);m.set(id,[...(m.get(id)??[]),r]);}return m; };
   const distancesMap=useMemo(()=>byRace(distances),[distances]);
   const pricesMap=useMemo(()=>byRace(prices),[prices]);
   const filtered=useMemo(()=>races.filter(r=>{
     const searchable=[r.name,r.city,r.region,r.organizer_name].map(val).join(" ").toLocaleLowerCase("cs");
-    return (!query||searchable.includes(query.toLocaleLowerCase("cs")))&&(!sport||val(r.sport)===sport)&&(!status||val(r.status)===status)&&(!month||monthKey(r.start_date)===month);
-  }).sort((a,b)=>val(a.start_date).localeCompare(val(b.start_date))||val(a.name).localeCompare(val(b.name),"cs")),[races,query,sport,status,month]);
+    return (!query||searchable.includes(query.toLocaleLowerCase("cs")))&&(!sport||val(r.sport)===sport)&&(!organizer||val(r.organizer_name)===organizer)&&(!status||val(r.status)===status)&&(!month||monthKey(r.start_date)===month);
+  }).sort((a,b)=>val(a.start_date).localeCompare(val(b.start_date))||val(a.name).localeCompare(val(b.name),"cs")),[races,query,sport,organizer,status,month]);
   const grouped=useMemo(()=>{const m=new Map<string,Row[]>();for(const r of filtered){const k=monthKey(r.start_date);m.set(k,[...(m.get(k)??[]),r]);}return [...m.entries()];},[filtered]);
-  return <main className={styles.page}><div className={styles.container}>
-    <Link className={styles.back} href="/platform"><ArrowLeft size={15}/>Zpět na platformu</Link>
-    <header className={styles.header}><div><div className={styles.eyebrow}><Flag size={13}/>SPRINTUY / PLATFORMA</div><h1>Závody</h1><p>Archivace přímo v seznamu. Po otevření spravuješ trasy, kategorie a jejich cenové vlny.</p></div><div className={styles.counter}><span>Publikované závody</span><strong>{publishedRaces.length}</strong></div></header>
-    <div role="status" aria-label="Stav kontrol závodů" style={{display:"flex",flexWrap:"wrap",gap:12,margin:"0 0 14px",fontSize:13,fontWeight:650}}>
-      <span style={{color:"#17804a",display:"inline-flex",alignItems:"center",gap:6}}><Check size={16}/> Zkontrolováno: {reviewedTotal}</span>
-      <span style={{color:"#c44b53",display:"inline-flex",alignItems:"center",gap:6}}><X size={16}/> Nezkontrolováno: {uncheckedTotal}</span>
-    </div>
+  return <div className={styles.page} style={{minHeight: "auto", background: "transparent", padding: 0, width: "100%"}}><div className={styles.container} style={{maxWidth: "none", padding: 0, margin: 0, width: "100%"}}>
+    <header className={styles.header}><div><div className={styles.eyebrow}><Flag size={13}/>SPRINTUY / PLATFORMA</div><h1>Závody</h1><Link href="/platform/pridat-zavody" style={{display:"inline-flex",marginTop:9,padding:"9px 13px",borderRadius:8,background:"#171717",color:"white",fontSize:12,textDecoration:"none"}}>+ Přidat závod</Link><p>Archivace přímo v seznamu. Po otevření spravuješ trasy, kategorie a jejich cenové vlny.</p></div><div className={styles.counter}><span>Celkem závodů</span><strong>{races.length}</strong></div></header>
     {saved&&<div className={styles.success}>Změny byly uloženy.</div>}
     <div className={styles.filters}><label className={styles.search}><Search size={17}/><input aria-label="Hledat" value={query} placeholder="Hledat závod, město nebo pořadatele…" onChange={e=>setQuery(e.target.value)}/></label>
       <select value={sport} onChange={e=>setSport(e.target.value)} aria-label="Sport"><option value="">Všechny sporty</option>{sports.map(s=><option key={s} value={s}>{s}</option>)}</select>
+      <select value={organizer} onChange={e=>setOrganizer(e.target.value)} aria-label="Pořadatel"><option value="">Všichni pořadatelé</option>{organizers.map(o=><option key={o} value={o}>{o}</option>)}</select>
       <select value={month} onChange={e=>setMonth(e.target.value)} aria-label="Měsíc"><option value="">Všechny měsíce</option>{months.map(m=><option key={m} value={m}>{monthName(m)}</option>)}</select>
       <select value={status} onChange={e=>setStatus(e.target.value)} aria-label="Stav"><option value="">Všechny stavy</option><option value="published">Published</option><option value="archived">Archived</option><option value="draft">Draft</option></select>
     </div>
-    <div className={styles.resultCount}>Zobrazeno {filtered.length} z {status === "published" ? publishedRaces.length : races.length} · chronologicky · dnešní datum {localToday()}</div>
+    <div className={styles.resultCount}>Zobrazeno {filtered.length} z {races.length} · chronologicky · dnešní datum {localToday()}</div>
     {grouped.map(([key,items])=><section key={key} className={styles.month}><div className={styles.monthHeading}><h2>{monthName(key)}</h2><span>{items.length} závodů</span></div>
       <div className={styles.tableWrap}><div className={styles.tableHeader} style={{gridTemplateColumns:"105px minmax(220px,1fr) 90px 50px 50px 116px 125px 28px"}}><span>Datum</span><span>Závod</span><span>Sport</span><span>Trasy</span><span>Ceny</span><span>Stav (upravit)</span><span>Odkazy</span><span/></div>
-      {items.map(r => { const id = val(r.id); return <RaceRow key={id} race={r} distances={distancesMap.get(id) ?? []} prices={pricesMap.get(id) ?? []} expanded={id===open} reviewed={isReviewed(r)} onReviewed={(raceId, checked) => setReviewOverrides(prev => ({...prev, [raceId]:checked}))} onToggle={() => setOpen(id===open ? "" : id)}/>; })}</div></section>)}
+      {items.map(r => { const id = val(r.id); return <RaceRow key={id} race={r} distances={distancesMap.get(id) ?? []} prices={pricesMap.get(id) ?? []} expanded={id===open} onToggle={() => setOpen(id===open ? "" : id)}/>; })}</div></section>)}
     {!filtered.length&&<div className={styles.empty}>Žádné závody nenalezeny.</div>}
-  </div></main>;
+  </div></div>;
 }

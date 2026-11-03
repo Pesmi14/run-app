@@ -2,16 +2,23 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Activity,
-  ArrowUpRight,
-  Database,
+  CalendarCheck2,
+  Users,
+  MessageCircleMore,
   Flag,
   LogOut,
   PlusCircle,
   ShieldCheck,
+  Newspaper,
+  UsersRound,
+  MessageSquare,
+  ListChecks,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "../actions";
+
+export const dynamic = "force-dynamic";
 
 export default async function PlatformPage() {
   const supabase = await createClient();
@@ -23,7 +30,7 @@ export default async function PlatformPage() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    redirect("/");
+    redirect("/login");
   }
 
   // Přístup pouze pro administrátora
@@ -32,6 +39,36 @@ export default async function PlatformPage() {
   if (!adminId || user.id !== adminId) {
     redirect("/unauthorized");
   }
+
+  // Český kalendářní den (date sloupce v Supabase jsou bez časové zóny).
+  const todayPrague = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Prague",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
+  // Záměrně oddělujeme "všechny publikované" od "nabízené nadcházející".
+  // Parent event zastupuje své podzávody, abychom jednu akci nepočítali vícekrát.
+  // Pokud má mobil jiný filtr, je potřeba shodu ověřit SQL dotazem níže.
+  const [usersResult, participationsResult, feedbackResult, racesResult] = await Promise.all([
+    supabase.from("user_profiles").select("user_id", { count: "exact", head: true }),
+    supabase.from("user_races").select("id", { count: "exact", head: true }).eq("status", "registered"),
+    supabase.from("app_feedback").select("id", { count: "exact", head: true }).in("status", ["new", "in_progress"]),
+    supabase
+      .from("races")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "published")
+      .is("parent_event_id", null)
+      .or(`start_date.gte.${todayPrague},end_date.gte.${todayPrague}`),
+  ]);
+
+  const statistics = [
+    { label: "Uživatelé", value: usersResult.error ? null : usersResult.count, detail: "Profily registrovaných uživatelů", icon: Users },
+    { label: "Registrace na závody", value: participationsResult.error ? null : participationsResult.count, detail: "Aktuální registrace (registered)", icon: CalendarCheck2 },
+    { label: "Nevyřízená zpětná vazba", value: feedbackResult.error ? null : feedbackResult.count, detail: "Nové a rozpracované zprávy", icon: MessageCircleMore },
+    { label: "Nadcházející závody v aplikaci", value: racesResult.error ? null : racesResult.count, detail: "Publikované budoucí hlavní závody", icon: Flag },
+  ];
 
   return (
     <main className="platform-page">
@@ -59,6 +96,10 @@ export default async function PlatformPage() {
               <PlusCircle size={17} />
               <span>Přidat závody</span>
             </Link>
+            <Link href="/platform/novinky" className="nav-item"><Newspaper size={17}/><span>Novinky</span></Link>
+            <Link href="/platform/komunita" className="nav-item"><UsersRound size={17}/><span>Komunita</span></Link>
+            <Link href="/platform/feedback" className="nav-item"><MessageSquare size={17}/><span>Zpětná vazba</span></Link>
+            <Link href="/platform/waitlist" className="nav-item"><ListChecks size={17}/><span>Waitlist</span></Link>
           </nav>
         </div>
 
@@ -107,75 +148,24 @@ export default async function PlatformPage() {
             </p>
           </div>
 
-          {/* STATUS CARDS */}
-          <div className="dashboard-grid">
-            <div className="dashboard-card">
-              <div className="card-top">
-                <div className="card-icon">
-                  <Database size={19} />
+          {/* Čtyři živé statistiky z databáze */}
+          <div className="dashboard-grid" style={{ marginTop: 32 }}>
+            {statistics.map(({ label, value, detail, icon: Icon }) => (
+              <div className="dashboard-card" key={label} style={{ minHeight: 156, gap: 16 }}>
+                <div className="card-top">
+                  <span style={{ color: "#747474", fontSize: 12, fontWeight: 600 }}>{label}</span>
+                  <Icon size={19} style={{ color: "#777" }} aria-hidden="true" />
                 </div>
-
-                <ArrowUpRight size={18} className="muted" />
-              </div>
-
-              <div>
-                <h2>Supabase Auth</h2>
-
-                <p>
-                  Připojení k autentizační službě je aktivní.
-                  Tvoje identita byla úspěšně ověřena.
-                </p>
-              </div>
-
-              <div className="status-row">
-                <span className="status-dot" />
-                <span>Připojeno</span>
-              </div>
-            </div>
-
-            <div className="dashboard-card">
-              <div className="card-top">
-                <div className="card-icon">
-                  <ShieldCheck size={19} />
+                <div>
+                  <strong style={{ display: "block", fontSize: 38, fontWeight: 750, lineHeight: 1.1, letterSpacing: "-1.5px", fontVariantNumeric: "tabular-nums" }}>
+                    {value === null ? "—" : new Intl.NumberFormat("cs-CZ").format(value)}
+                  </strong>
+                  <p style={{ marginTop: 9 }}>{value === null ? "Nepodařilo se načíst údaj – zkontroluj oprávnění RLS." : detail}</p>
                 </div>
               </div>
-
-              <div>
-                <h2>Zabezpečení platformy</h2>
-
-                <p>
-                  Administrace je dostupná pouze
-                  autorizovanému administrátorskému účtu.
-                </p>
-              </div>
-
-              <div className="status-row">
-                <span className="status-dot" />
-                <span>Chráněno</span>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* RACE MANAGEMENT */}
-          <div className="next-section">
-            <span className="eyebrow">SPRÁVA ZÁVODŮ</span>
-
-            <h2>Všechny závody na jednom místě.</h2>
-
-            <p>
-              Procházej závody podle měsíců, upravuj jejich
-              informace, trasy, ceny a registrační odkazy.
-            </p>
-
-            <Link
-              href="/platform/zavody"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#171717] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#333]"
-            >
-              <Flag size={16} />
-              Otevřít závody
-              <ArrowUpRight size={16} />
-            </Link>
-          </div>
         </div>
       </section>
     </main>

@@ -1,30 +1,21 @@
+import Image from "next/image";
+import WaitlistForm from "@/components/WaitlistForm";
+import styles from "./page.module.css";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import LoginForm from "@/components/LoginForm";
-import SprintuyRun from "@/components/SprintuyRun";
-
-export default async function HomePage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (
-    user &&
-    process.env.ADMIN_USER_ID &&
-    user.id === process.env.ADMIN_USER_ID
-  ) {
-    redirect("/platform");
-  }
-
+export default function HomePage() {
   return (
-    <main className="minimal-landing">
-      <div className="minimal-landing-content">
-        <LoginForm />
-        <SprintuyRun />
-      </div>
+    <main className={styles.landing}>
+      <section className={styles.content} aria-label="Čekací listina Sprintuy">
+        <Image
+          src="/images/sprintuy-logo.png"
+          alt="Sprintuy"
+          width={400}
+          height={160}
+          className={styles.logo}
+          priority
+        />
+        <WaitlistForm />
+      </section>
     </main>
   );
 }

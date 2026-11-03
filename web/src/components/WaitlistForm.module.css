@@ -1,0 +1,24 @@
+.form {max-width: 540px; width: 100%; display: flex; flex-direction: column; gap: 12px;}
+.label {font-size: 10px; color: #888; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 1px;}
+.email {border: 1px solid #373737; border-radius: 11px; padding: 0 19px; height: 58px; color: #fff; background: #141414; font-size: 16px; outline: none; transition: border-color .2s; width: 100%;}
+.email:focus {border-color: #b1b1b1;}
+.email::placeholder {color: #676767;}
+.fieldset {border: none; padding: 9px 0 0; min-width: 0; margin: 0;}
+.fieldset legend {padding: 0; margin: 0 0 12px;}
+.options {display: grid; grid-template-columns: 1fr 1fr; gap: 10px;}
+.option,.selected {border: 1px solid #353535; border-radius: 11px; background: #141414; min-height: 57px; color: #b1b1b1; display: flex; align-items: center; gap: 11px; padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s;}
+.selected {border-color: #f3f3f3; color: #fff; background: #252525;}
+.option input,.selected input {position: absolute; opacity: 0; width: 1px; height: 1px;}
+.radio {width: 15px; height: 15px; border: 1.5px solid #717171; border-radius: 50%; display: inline-block; flex: none;}
+.selected .radio {border: 4.5px solid #fff;}
+.option:focus-within,.selected:focus-within {outline: 2px solid #fff; outline-offset: 3px;}
+.button {margin-top: 14px; width: 100%; min-height: 62px; border: 0; border-radius: 11px; background: #fff; color: #0a0a0a; display: flex; justify-content: space-between; align-items: center; padding: 0 23px; font-size: 15px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s;}
+.button:hover:not(:disabled) {transform: translateY(-2px); background: #ededed;}
+.button:disabled {opacity: .7; cursor: wait;}
+.error {color: #ff9d8c; font-size: 13px; margin: 2px 0;}
+.honeypot {position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;}
+.success {max-width: 540px; display: flex; align-items: center; gap: 17px; border: 1px solid #414141; border-radius: 12px; background: #171717; padding: 22px; color: #fff;}
+.success svg {color: #75d7a3; flex: none;}
+.success div {display: flex; flex-direction: column; gap: 7px;}
+.success strong {font-size: 16px;}
+.success span {font-size: 13px; color: #aaa;}

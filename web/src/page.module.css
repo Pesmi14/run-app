@@ -1,0 +1,154 @@
+.landing {
+  min-height: 100svh;
+  background-color: #080808;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.65) 45%, rgba(0, 0, 0, 0.30) 100%),
+    url("/images/background.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 30px clamp(22px, 5.5vw, 88px) 27px;
+  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  isolation: isolate;
+}
+
+.header,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand {
+  text-decoration: none;
+  color: #fff;
+  font-size: 22px;
+  letter-spacing: -0.9px;
+  font-weight: 900;
+}
+
+.brand span {
+  color: #ff674e;
+}
+
+.headerNote,
+.eyebrow,
+.footer {
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.7px;
+  color: #b0b0b0;
+}
+
+.headerNote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  background: #f97359;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px #f9735914;
+}
+
+.hero {
+  flex: 1;
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(65px, 12vh, 155px) 0;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #d0d0d0;
+  margin-bottom: 24px;
+}
+
+.smallLine {
+  width: 24px;
+  height: 1px;
+  background: #fa7257;
+  display: inline-block;
+}
+
+.hero h1 {
+  font-size: clamp(52px, 8.5vw, 116px);
+  line-height: 0.99;
+  letter-spacing: -0.075em;
+  font-weight: 900;
+  margin: 0;
+  color: #fff;
+}
+
+.hero h1 span {
+  color: #c5c5c5;
+}
+
+.description {
+  font-size: clamp(15px, 1.5vw, 19px);
+  line-height: 1.75;
+  color: #e0e0e0;
+  max-width: 590px;
+  margin: 32px 0 37px;
+}
+
+.finePrint {
+  font-size: 12px;
+  color: #c0c0c0;
+  margin: 16px 0 0;
+}
+
+.footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.20);
+  padding-top: 23px;
+  font-size: 10px;
+}
+
+@media (max-width: 680px) {
+  .landing {
+    padding: 23px 22px 24px;
+    background-image:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.60) 0%, rgba(0, 0, 0, 0.72) 48%, rgba(0, 0, 0, 0.82) 100%),
+      url("/images/background-mobile.jpg");
+    background-position: center;
+  }
+
+  .brand {
+    font-size: 19px;
+  }
+
+  .headerNote {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .hero {
+    padding: 95px 0 110px;
+  }
+
+  .hero h1 {
+    font-size: clamp(49px, 12vw, 78px);
+  }
+
+  .description {
+    margin: 26px 0 30px;
+  }
+
+  .footer {
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+}

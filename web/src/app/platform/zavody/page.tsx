@@ -1,22 +1,19 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import RacesManager from "@/components/RacesManager";
+import PlatformContentShell from "@/components/PlatformContentShell";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type Row = Record<string, unknown>;
+type Db = Awaited<ReturnType<typeof createClient>>;
 
-async function loadAll(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  table: string,
-  orderColumn: string
-): Promise<Row[]> {
+async function loadAll(db: Db, table: string, orderColumn: string): Promise<Row[]> {
   const all: Row[] = [];
   const size = 500;
   for (let offset = 0; ; offset += size) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("*")
+    const { data, error } = await db.from(table).select("*")
       .order(orderColumn, { ascending: true, nullsFirst: false })
       .range(offset, offset + size - 1);
     if (error) throw new Error(`Načítání ${table}: ${error.message}`);
@@ -34,27 +31,25 @@ export default async function ZavodyPage({
 }) {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) redirect("/");
-  if (!process.env.ADMIN_USER_ID || user.id !== process.env.ADMIN_USER_ID) {
+  if (error || !user) redirect("/login");
+  if (!process.env.ADMIN_USER_ID || user.id !== process.env.ADMIN_USER_ID)
     redirect("/unauthorized");
-  }
 
-  // Vždy čteme aktuální data ze stejného Supabase projektu jako mobilní aplikace.
-  // Nezávislé dotazy kvůli chybějícím/neúplným relačním vazbám při importu.
   const [races, distances, prices] = await Promise.all([
     loadAll(supabase, "races", "start_date"),
     loadAll(supabase, "race_distances", "created_at"),
     loadAll(supabase, "race_price_tiers", "created_at"),
   ]);
-
   const query = await searchParams;
   return (
-    <RacesManager
-      races={races}
-      distances={distances}
-      prices={prices}
-      initiallyOpen={query.open || ""}
-      saved={query.saved === "1"}
-    />
+    <PlatformContentShell active="zavody" email={user.email || ""}>
+      <RacesManager
+        races={races}
+        distances={distances}
+        prices={prices}
+        initiallyOpen={query.open || ""}
+        saved={query.saved === "1"}
+      />
+    </PlatformContentShell>
   );
 }
