@@ -12,6 +12,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
+
         setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => {
             request.cookies.set(name, value);
@@ -33,7 +34,9 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // Ověří podpis JWT a v případě potřeby obnoví session.
+  // U asymetrických klíčů může být rychlejší než getUser().
+  await supabase.auth.getClaims();
 
   return response;
 }
