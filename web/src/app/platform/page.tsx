@@ -51,6 +51,7 @@ export default async function PlatformPage() {
   // Záměrně oddělujeme "všechny publikované" od "nabízené nadcházející".
   // Parent event zastupuje své podzávody, abychom jednu akci nepočítali vícekrát.
   // Pokud má mobil jiný filtr, je potřeba shodu ověřit SQL dotazem níže.
+  const statsStarted = performance.now();
   const [usersResult, participationsResult, feedbackResult, racesResult] = await Promise.all([
     supabase.from("user_profiles").select("user_id", { count: "exact", head: true }),
     supabase.from("user_races").select("id", { count: "exact", head: true }).eq("status", "registered"),
@@ -62,6 +63,12 @@ export default async function PlatformPage() {
       .is("parent_event_id", null)
       .or(`start_date.gte.${todayPrague},end_date.gte.${todayPrague}`),
   ]);
+
+  console.log(
+  `[SPRINTUY PERFORMANCE] Dashboard queries: ${Math.round(
+    performance.now() - statsStarted
+  )} ms`
+);
 
   const statistics = [
     { label: "Uživatelé", value: usersResult.error ? null : usersResult.count, detail: "Profily registrovaných uživatelů", icon: Users },
