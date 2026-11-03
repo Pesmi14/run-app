@@ -1898,12 +1898,9 @@ button:disabled {
 
 /* Sprintuy – tmavé pozadí i při přetažení stránky */
 
-html {
-  background-color: #020817;
-}
-
+html,
 body {
-  background-color: #020817;
+  background-color: #fafafa;
   margin: 0;
 }
 
@@ -1912,4 +1909,26 @@ body {
   body {
     overscroll-behavior-y: none;
   }
+}
+
+@media (max-width: 680px) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+/* Sprintuy – oprava pozadí administrace */
+
+.platform-page .platform-main {
+  background: #fafafa !important;
+}
+
+.platform-page .dashboard-content {
+  background: #fafafa !important;
+  color: #171717;
+}
+
+.platform-page .dashboard-heading h1 {
+  color: #171717 !important;
 }
