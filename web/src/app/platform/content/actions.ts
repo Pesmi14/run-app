@@ -71,8 +71,10 @@ function payload(kind: ContentKind, form: FormData): Record<string, unknown> {
   const slug = slugify(clean(form, "slug") || title);
   if (!slug) throw new Error("Vyplň platný slug.");
   if (kind === "runclubs") {
+    if (!clean(form, "region", 120)) throw new Error("Vyber kraj runclubu.");
     return {
       name: title, slug, city: nullable(clean(form, "city", 120)),
+      region: clean(form, "region", 120) || null,
       description: nullable(clean(form, "description", 15000)),
       instagram_url: validUrl(clean(form, "instagram_url", 1000)), is_active: active,
     };
@@ -85,7 +87,29 @@ function payload(kind: ContentKind, form: FormData): Record<string, unknown> {
     description: nullable(clean(form, "description", 15000)),
     starts_at: starts, ends_at: ends, is_active: active,
   };
-  return kind === "competitions" ? { ...common, prize: nullable(clean(form, "prize", 3000)) } : common;
+  if (kind === "events") {
+    const priceRaw = clean(form, "price", 30);
+    const capRaw = clean(form, "capacity", 30);
+    const price = priceRaw ? Number(priceRaw.replace(",", ".")) : null;
+    const capacity = capRaw ? Number(capRaw) : null;
+    if (price !== null && (!Number.isFinite(price) || price < 0)) throw new Error("Neplatná cena eventu.");
+    if (capacity !== null && (!Number.isInteger(capacity) || capacity <= 0)) throw new Error("Neplatná kapacita.");
+    const regStart = timestamp(clean(form, "registration_opens_at"));
+    const regEnd = timestamp(clean(form, "registration_closes_at"));
+    if (regStart && regEnd && regEnd < regStart) throw new Error("Konec registrací je před začátkem.");
+    const status = clean(form, "status");
+    if (!["draft", "published", "cancelled"].includes(status)) throw new Error("Neplatný stav eventu.");
+    return { ...common, venue: nullable(clean(form, "venue", 300)), price, capacity,
+      currency: "CZK", registration_opens_at: regStart, registration_closes_at: regEnd, status };
+  }
+  const status = clean(form, "status");
+  if (!["draft", "active", "ended", "cancelled"].includes(status)) throw new Error("Neplatný stav soutěže.");
+  const maxRaw = clean(form, "max_participants", 30);
+  const maxParticipants = maxRaw ? Number(maxRaw) : null;
+  if (maxParticipants !== null && (!Number.isInteger(maxParticipants) || maxParticipants <= 0)) throw new Error("Neplatná kapacita soutěže.");
+  if (!ends) throw new Error("Vyplň datum a čas konce soutěže.");
+  return { ...common, prize: nullable(clean(form, "prize", 3000)),
+    rules: nullable(clean(form, "rules", 15000)), max_participants: maxParticipants, status };
 }
 
 function paths() {
@@ -164,6 +188,19 @@ export async function deleteContent(kind: ContentKind, id: string): Promise<Cont
   try {
     const supabase = await admin();
     if (!tables[kind]) throw new Error("Neplatná sekce.");
+    // Chraň navázané účasti před nechtěným CASCADE smazáním.
+    if (kind === "runclubs") {
+      const { count, error } = await supabase.from("runclub_runs")
+        .select("id", { count: "exact", head: true }).eq("runclub_id", id);
+      if (error) throw error;
+      if ((count ?? 0) > 0) throw new Error("Runclub má naplánované výběhy. Nejprve je vyřeš nebo runclub deaktivuj.");
+    }
+    if (kind === "events") {
+      const { count, error } = await supabase.from("community_event_requests")
+        .select("id", { count: "exact", head: true }).eq("event_id", id);
+      if (error) throw error;
+      if ((count ?? 0) > 0) throw new Error("Event má žádosti o účast. Místo mazání ho deaktivuj.");
+    }
     // Soutěž s přihlášenými uživateli nesmažeme, aby se neodstranily přihlášky.
     if (kind === "competitions") {
       const { count, error } = await supabase.from("competition_entries")

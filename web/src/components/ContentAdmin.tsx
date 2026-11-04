@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import Link from "next/link";
+import { Check, Pencil, Plus, Save, Trash2, X, ExternalLink } from "lucide-react";
 import { deleteContent, saveContent, toggleContent, type ContentKind, type ContentResult } from "@/app/platform/content/actions";
 import styles from "./ContentAdmin.module.css";
 
@@ -13,6 +14,7 @@ const cfg: Record<ContentKind, { singular: string; plural: string; image: string
   events: { singular: "event", plural: "Eventy", image: "image_url" },
   competitions: { singular: "soutěž", plural: "Soutěže", image: "image_url" },
 };
+const REGIONS = ["Hlavní město Praha", "Středočeský kraj", "Jihočeský kraj", "Plzeňský kraj", "Karlovarský kraj", "Ústecký kraj", "Liberecký kraj", "Královéhradecký kraj", "Pardubický kraj", "Kraj Vysočina", "Jihomoravský kraj", "Olomoucký kraj", "Zlínský kraj", "Moravskoslezský kraj"] as const;
 const s = (v: unknown) => typeof v === "string" ? v : "";
 const displayDate = (v: unknown) => v ? new Date(String(v)).toLocaleString("cs-CZ", { dateStyle: "medium", timeStyle: "short" }) : "—";
 function dateInput(v: unknown) {
@@ -25,8 +27,8 @@ function dateInput(v: unknown) {
 function Field({ label, name, value, required, type = "text", placeholder }: {
   label: string; name: string; value?: unknown; required?: boolean; type?: string; placeholder?: string;
 }) {
-  return <label className={styles.field}><span>{label}</span><input name={name} type={type} required={required}
-    defaultValue={type === "datetime-local" ? dateInput(value) : s(value)} placeholder={placeholder} /></label>;
+  return <label className={styles.field}><span>{label}</span><input name={name} type={type} step={type === "number" ? "any" : undefined} required={required}
+    defaultValue={type === "datetime-local" ? dateInput(value) : value == null ? "" : String(value)} placeholder={placeholder} /></label>;
 }
 function TextArea({ label, name, value, required, rows = 4 }: {
   label: string; name: string; value?: unknown; required?: boolean; rows?: number;
@@ -43,7 +45,7 @@ function Editor({ kind, item, done, respond }: { kind: ContentKind; item: Item |
   return <form className={styles.editor} onSubmit={event => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    for (const key of ["published_at", "starts_at", "ends_at"]) {
+    for (const key of ["published_at", "starts_at", "ends_at", "registration_opens_at", "registration_closes_at"]) {
       const raw = String(form.get(key) || "");
       if (raw) form.set(key, new Date(raw).toISOString());
     }
@@ -61,13 +63,42 @@ function Editor({ kind, item, done, respond }: { kind: ContentKind; item: Item |
       <Field label="Název" name={title} value={item?.[title]} required />
       {kind !== "news" && <Field label="Slug" name="slug" value={item?.slug} placeholder="Automaticky z názvu, pokud prázdné" />}
       {kind !== "news" && <Field label="Město" name="city" value={item?.city} />}
+      {kind === "runclubs" && (
+        <label className={styles.field}>
+          <span>Kraj (pro doporučování v aplikaci)</span>
+          <select name="region" defaultValue={s(item?.region)} required>
+            <option value="" disabled>Vyber kraj</option>
+            {s(item?.region) && !REGIONS.some(region => region === s(item?.region)) && (
+              <option value={s(item?.region)}>{s(item?.region)} (dříve uložená hodnota)</option>
+            )}
+            {REGIONS.map(region => <option key={region} value={region}>{region}</option>)}
+          </select>
+        </label>
+      )}
       {kind === "news" && <Field label="Datum publikace" name="published_at" type="datetime-local" value={item?.published_at ?? new Date().toISOString()} required />}
       {(kind === "events" || kind === "competitions") && <><Field label="Začátek" name="starts_at" type="datetime-local" value={item?.starts_at}/><Field label="Konec" name="ends_at" type="datetime-local" value={item?.ends_at}/></>}
     </div>
     {kind === "news" ? <><TextArea label="Krátký perex" name="excerpt" rows={2} value={item?.excerpt}/><TextArea label="Celý obsah" name="content" value={item?.content} required rows={8}/></>
       : <TextArea label="Popis" name="description" value={item?.description} rows={5}/>}
     {kind === "runclubs" && <Field label="Instagram URL" name="instagram_url" value={item?.instagram_url} type="url" />}
-    {kind === "competitions" && <TextArea label="Výhra" name="prize" value={item?.prize} rows={2} />}
+    {kind === "events" && <>
+      <div className={styles.twoCols}>
+        <Field label="Konkrétní místo konání" name="venue" value={item?.venue}/>
+        <Field label="Cena (Kč)" name="price" type="number" value={item?.price}/>
+        <Field label="Kapacita" name="capacity" type="number" value={item?.capacity}/>
+        <Field label="Registrace od" name="registration_opens_at" type="datetime-local" value={item?.registration_opens_at}/>
+        <Field label="Registrace do" name="registration_closes_at" type="datetime-local" value={item?.registration_closes_at}/>
+        <label className={styles.field}><span>Stav eventu</span><select name="status" defaultValue={s(item?.status) || "draft"}><option value="draft">Koncept</option><option value="published">Publikovaný</option><option value="cancelled">Zrušený</option></select></label>
+      </div>
+    </>}
+    {kind === "competitions" && <>
+      <TextArea label="Pravidla soutěže" name="rules" value={item?.rules} rows={5} />
+      <TextArea label="Výhra" name="prize" value={item?.prize} rows={2} />
+      <div className={styles.twoCols}>
+        <Field label="Maximální počet účastníků" name="max_participants" type="number" value={item?.max_participants}/>
+        <label className={styles.field}><span>Stav soutěže</span><select name="status" defaultValue={s(item?.status) || "draft"}><option value="draft">Koncept</option><option value="active">Aktivní</option><option value="ended">Ukončená</option><option value="cancelled">Zrušená</option></select></label>
+      </div>
+    </>}
     {kind === "news" && <div className={styles.twoCols}><Field label="CTA – text tlačítka" name="link_label" value={item?.link_label} placeholder="Zobrazit závod"/><Field label="CTA – odkaz" name="link_url" value={item?.link_url} type="url" placeholder="https://..."/></div>}
     <div className={styles.twoCols}>
       <Field label={kind === "runclubs" ? "URL loga" : "URL obrázku"} name={imageField} value={item?.[imageField]} type="url" placeholder="https://..." />
@@ -90,7 +121,7 @@ export default function ContentAdmin({ kind, items, entryCounts = {} }: { kind: 
     if (visibility === "active" && item.is_active !== true) return false;
     if (visibility === "hidden" && item.is_active === true) return false;
     const title = s(item[kind === "runclubs" ? "name" : "title"]);
-    return `${title} ${s(item.city)}`.toLocaleLowerCase("cs").includes(filter.toLocaleLowerCase("cs"));
+    return `${title} ${s(item.city)} ${s(item.region)}`.toLocaleLowerCase("cs").includes(filter.toLocaleLowerCase("cs"));
   });
   async function perform(id: string, fn: () => Promise<ContentResult>) {
     setBusyId(id);
@@ -116,10 +147,12 @@ export default function ContentAdmin({ kind, items, entryCounts = {} }: { kind: 
         return <div className={styles.record} key={id}>
           <div className={styles.recordLine}>
             {image && <img alt="" src={image} className={styles.thumb} />}
-            <div className={styles.recordInfo}><strong>{name}</strong><span>{kind !== "news" ? [s(item.city), date ? displayDate(date) : ""].filter(Boolean).join(" · ") : displayDate(date)}</span><small>Upraveno: {displayDate(item.updated_at)}{kind === "competitions" ? ` · Přihlášeno: ${entryCounts[id] ?? 0}` : ""}</small></div>
-            <span className={item.is_active ? styles.active : styles.inactive}>{item.is_active ? "Aktivní" : "Skryté"}</span>
+            <div className={styles.recordInfo}><strong>{name}</strong><span>{kind !== "news" ? [s(item.city), kind === "runclubs" ? s(item.region) : "", date ? displayDate(date) : ""].filter(Boolean).join(" · ") : displayDate(date)}</span><small>Upraveno: {displayDate(item.updated_at)}{kind === "competitions" ? ` · Přihlášeno: ${entryCounts[id] ?? 0}` : ""}</small></div>
+            <span className={item.is_active && !(kind === "competitions" && item.ends_at && new Date(String(item.ends_at)).getTime() <= Date.now()) ? styles.active : styles.inactive}>{kind === "competitions" && item.ends_at && new Date(String(item.ends_at)).getTime() <= Date.now() ? "Ukončená" : item.is_active ? "Aktivní" : "Skryté"}</span>
             <div className={styles.recordActions}>
               <button disabled={busyId === id} title={item.is_active ? "Skrýt" : "Aktivovat"} aria-label={item.is_active ? "Skrýt" : "Aktivovat"} onClick={() => perform(id, () => toggleContent(kind, id, item.is_active !== true))}>{item.is_active ? <X size={16}/> : <Check size={16}/>}</button>
+              {kind === "runclubs" && <Link className={styles.manageLink} href={`/platform/komunita/runclubs/${id}?new=1`}><Plus size={15}/> Přidat výběh</Link>}
+              {kind !== "news" && <Link className={styles.manageLink} href={`/platform/komunita/${kind}/${id}`}><ExternalLink size={15}/>{kind === "runclubs" ? "Všechny výběhy" : kind === "events" ? "Žádosti" : "Účastníci"}</Link>}
               <button title="Upravit" aria-label="Upravit" onClick={() => setEditing(editing === id ? null : id)}><Pencil size={16}/></button>
               <button disabled={busyId === id} title="Smazat" aria-label="Smazat" onClick={() => {
                 if (window.confirm(`Opravdu TRVALE smazat ${name}?\nTato akce nejde vrátit.`)) perform(id, () => deleteContent(kind, id));

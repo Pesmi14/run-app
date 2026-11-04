@@ -1,87 +1,9 @@
-.landing {
-  min-height: 100vh;
-  min-height: 100svh;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  color: #fff;
-  background-color: #080808;
-  background-image:
-    linear-gradient(90deg, rgba(0, 0, 0, .28), rgba(0, 0, 0, .34)),
-    url("/images/background.jpg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.content {
-  width: 100%;
-  max-width: 540px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 42px;
-}
-
-.logo {
-  display: block;
-  width: min(100%, 340px);
-  height: auto;
-  max-height: 170px;
-  object-fit: contain;
-}
-
-/* WaitlistForm má vlastní styly i funkčnost. */
-.content > form,
-.content > div {
-  width: 100%;
-}
-
-@media (max-width: 680px) {
-  .landing {
-    padding: 32px 20px;
-    background-image:
-      linear-gradient(180deg, rgba(0, 0, 0, .30), rgba(0, 0, 0, .38)),
-      url("/images/background-mobile.jpg");
-    background-position: center;
-  }
-
-  .content {
-    gap: 30px;
-  }
-
-  .logo {
-    width: min(76%, 280px);
-  }
-}
-
-/* Mobilní zobrazení bez scrollování */
-@media (max-width: 680px) {
-  .landing {
-    height: 100svh;
-    min-height: 100svh;
-    max-height: 100svh;
-    overflow: hidden;
-    overscroll-behavior: none;
-    box-sizing: border-box;
-  }
-}
-
-/* Mobilní landing page přes celou obrazovku */
-
-@media (max-width: 680px) {
-  .landing {
-    min-height: 100svh;
-    height: 100svh;
-    box-sizing: border-box;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-}
-
-/* Tmavé pozadí pouze na hlavní stránce */
-.landing {
-  background-color: #020817;
+.landing { min-height: 100vh; min-height: 100svh; width: 100%; display: flex; align-items: center; justify-content: center; padding: 48px 24px; box-sizing: border-box; color: #fff; background-color: #020817; background-image: linear-gradient(90deg, rgba(0,0,0,.28), rgba(0,0,0,.34)), url('/images/background.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+.content { width: 100%; max-width: 540px; display: flex; flex-direction: column; align-items: center; gap: 42px; }
+.logo { display: block; width: min(100%, 340px); height: auto; max-height: 170px; object-fit: contain; }
+.content > form, .content > div { width: 100%; }
+@media(max-width: 680px) {
+ .landing { min-height: 100svh; padding: 32px 20px; background-image: linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.38)), url('/images/background-mobile.jpg'); background-position: center; }
+ .content { gap: 30px; }
+ .logo { width: min(76%, 280px); }
 }
